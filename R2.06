@@ -1,0 +1,261 @@
+# Fiche de révision (produite grace a une IA)
+
+Absolument ! Voici une fiche de révision basée sur les informations contenues dans les sources fournies, axée sur les concepts fondamentaux du SQL, notamment le Langage de Définition de Données (LDD) et le Langage de Manipulation de Données (LMD).
+
+**FICHE DE RÉVISION SQL**
+
+**I. Concepts Fondamentaux**
+
+*   **Vocabulaire SQL vs. Modèle Relationnel**:
+    *   Table (table) ↔ Relation
+    *   Colonne (column) ↔ Attribut
+    *   Ligne (row) ↔ Tuple
+*   **Types de Langages SQL**:
+    *   **Langage de Définition de Données (LDD)**: Utilisé pour définir et modifier la structure de la base de données (création, suppression, modification de tables, index, etc.).
+    *   **Langage de Manipulation de Données (LMD)**: Utilisé pour manipuler les données au sein des tables (insertion, sélection, mise à jour, suppression).
+    *   Langage de Contrôle de Transaction (LCT): Utilisé pour gérer les transactions (validation, annulation).
+    *   Langage de Contrôle d'Accès (LDA): Utilisé pour gérer les droits et privilèges des utilisateurs (mentionné en VI dans mais non détaillé dans les sources).
+*   **Schéma de Base de Données**: Un schéma ORACLE peut contenir des relations (tables), mais aussi d'autres composants comme des index, des séquences, des synonymes, des commentaires. Un schéma peut être transparent pour l'utilisateur, mais si un objet appartient à un schéma différent du schéma par défaut, son nom doit être préfixé par le nom de son schéma d'appartenance.
+
+**II. Langage de Définition de Données (LDD)**
+
+*   **Types de Données des Attributs**: Les attributs ont des types syntaxiques (e.g., NUMBER, VARCHAR2, DATE, CHAR).
+    *   **CHAR(n)**: Chaîne de caractères de taille fixe *n*.
+        *   Avantages: Accès direct facile, pas de fragmentation, réparation facile.
+        *   Inconvénient: Pas d'économie de place.
+    *   **VARCHAR2(n)**: Chaîne de caractères de taille variable jusqu'à *n*.
+        *   Avantage: Gain de place.
+        *   Inconvénients: Insertion plus longue (calcul de la taille), fragmentation inévitable, moindre performance d'accès.
+    *   **NUMBER(p, s)**: Nombre avec une précision *p* (nombre total de chiffres) et une échelle *s* (nombre de chiffres après la virgule). Si *s* est 0, seules les valeurs entières sont admises.
+    *   **DATE**: Stockage de dates et d'heures. Le format par défaut est DD-MON-YY HH:MM:SS.
+    *   **CLOB/BLOB**: Autres types pour de grands objets (non détaillés pour la syntaxe dans ces extraits).
+*   **Création de Relations (Tables)**:
+    *   **Création de nouvelles relations**:
+        ```sql
+        CREATE TABLE <nom_table>
+        (<nom_colonne1> <type1> [DEFAULT <expression1>] [NOT NULL] [UNIQUE]
+        [,<nom_colonne2> <type2> [DEFAULT <expression2>] [NOT NULL] [UNIQUE]…]
+        [, <contrainte1>[, <contrainte2>… ]])
+        ```
+        Les contraintes peuvent être définies au niveau de la colonne ou de la table.
+        *   **NOT NULL**: Impose l'existence de valeurs pour l'attribut.
+        *   **UNIQUE**: Impose l'unicité des valeurs pour l'attribut.
+        *   **DEFAULT <expression>**: Spécifie une valeur par défaut pour l'attribut. L'expression doit respecter le type de l'attribut.
+        *   **PRIMARY KEY**: Définit la clé primaire de la table (identifie chaque tuple de manière unique et ne peut pas contenir de valeurs NULL). Une seule clé primaire par relation. Peut être simple ou composée.
+        *   **FOREIGN KEY**: Définit une clé étrangère référençant la clé primaire d'une autre relation.
+            ```sql
+            CONSTRAINT <nom_contrainte> FOREIGN KEY(<liste_attributs>)
+            REFERENCES <nom_relation_associee>(<liste_attributs_ref>) [ON DELETE CASCADE | SET NULL]
+            ```
+            `ON DELETE CASCADE`: Si un tuple de la table référencée est supprimé, les tuples correspondants dans la table référençante sont également supprimés.
+            `ON DELETE SET NULL`: Si un tuple de la table référencée est supprimé, les valeurs de la clé étrangère correspondante dans la table référencante sont mises à NULL.
+        *   **CHECK(<condition>)**: Introduit une contrainte de domaine sur un attribut ou le résultat d'un calcul horizontal.
+        *   Il est possible de nommer les contraintes avec `CONSTRAINT <nom_contrainte>`.
+    *   **Création de relation par copie**:
+        ```sql
+        CREATE TABLE <nom_relation> [(<liste_attributs>, <liste_contraintes>)]
+        AS <specification_requete>
+        ```
+        Crée une nouvelle relation à partir du résultat d'une requête SELECT. Les contraintes d'intégrité de la relation d'origine ne sont pas répercutées (sauf NOT NULL). Il est possible de modifier le nom des attributs et de spécifier de nouvelles contraintes.
+*   **Modification de la Structure d'une Base (ALTER TABLE)**:
+    ```sql
+    ALTER TABLE <nom_table> <action>
+    ```
+    *   **Ajout d'attributs**:
+        ```sql
+        ALTER TABLE <nom_table>
+        ADD ([<nom_colonne1> <type1>] [DEFAULT <expr1>] [NOT NULL] [UNIQUE]
+        [,<nom_colonne2> <type2> [DEFAULT <expr2>] [NOT NULL] [UNIQUE]…]
+        [, <specif_contrainte> …])
+        ```
+       . Les nouvelles contraintes peuvent être ajoutées de la même manière que lors de la création.
+    *   **Modification de la définition d'un attribut**:
+        ```sql
+        ALTER TABLE <nom_table>
+        MODIFY [(]<nom_colonne1> [<nouveau_type1>] [DEFAULT <expr1>] [NOT NULL]
+        [,<nom_colonne2>[<nouveau_type2>] [DEFAULT <expr2>] [NOT NULL]…] [)]
+        ```
+       . Des restrictions existent si la table contient déjà des données.
+    *   **Modification de l'état d'une contrainte**:
+        ```sql
+        ALTER TABLE <nom_table>
+        {ENABLE | DISABLE} [VALIDATE | NOVALIDATE] CONSTRAINT <nom_contrainte>
+        ```
+       . Les états possibles sont ENABLE, DISABLE, VALIDATE, NOVALIDATE.
+    *   **Suppression de contrainte**:
+        ```sql
+        ALTER TABLE <nom_table> DROP CONSTRAINT <nom_contrainte>
+        ```
+       .
+    *   **Suppression d'attribut**:
+        ```sql
+        ALTER TABLE <nom_table> DROP COLUMN <nom_attribut> [CASCADE CONSTRAINTS]
+        ```
+       . `CASCADE CONSTRAINTS` propage la suppression aux clés étrangères référençant l'attribut supprimé.
+        ```sql
+        ALTER TABLE <nom_table> SET UNUSED (<nom_attribut> [, <nom_attribut>…])
+        ```
+        Marque des colonnes comme inutilisées.
+        ```sql
+        ALTER TABLE <nom_table> DROP UNUSED COLUMNS
+        ```
+        Supprime effectivement les colonnes marquées comme inutilisées.
+    *   **Changement de nom d'une relation**:
+        ```sql
+        RENAME <ancien_nom> TO <nouveau_nom>
+        ```
+       .
+    *   **Changement de nom d'un attribut**: Nécessite une procédure en plusieurs étapes (création d'une nouvelle table, copie des données, suppression de l'ancienne, renommage de la nouvelle).
+    *   **Modification du type d'un attribut**: Peut également nécessiter une procédure similaire au changement de nom, surtout si la table n'est pas vide.
+*   **Création de Séquences**: Utilisé pour générer des séquences numériques.
+    ```sql
+    CREATE SEQUENCE <nom_sequence>
+    [START WITH <valeur_depart>] [INCREMENT BY <valeur_increment>]
+    [MAXVALUE <valeur_maximale> | NOMAXVALUE]
+    [MINVALUE <valeur_minimale> | NOMINVALUE]
+    [CYCLE | NOCYCLE]
+    ```
+    Une séquence peut être supprimée avec `DROP SEQUENCE <nom_sequence>`. Les paramètres peuvent être modifiés avec `ALTER SEQUENCE`.
+*   **Commentaires**: Utilisés pour documenter le schéma.
+    ```sql
+    COMMENT ON TABLE <nom_table> IS '<texte_commentaire>'
+    COMMENT ON COLUMN <nom_table>.<nom_attribut> IS '<texte_commentaire>'
+    ```
+    Pour supprimer un commentaire, utiliser `IS ''`.
+*   **Index sur les Relations**: Structures de données pour optimiser l'accès aux tuples.
+    *   **Création d'index**:
+        ```sql
+        CREATE [UNIQUE] INDEX <nom_index>
+        ON <nom_table> (<nom_colonne1> [, <nom_colonne2>…])
+        ```
+       . L'option `UNIQUE` crée un index où les valeurs de la colonne indexée doivent être uniques. Jusqu'à 32 attributs pour un index de type arbre équilibré.
+    *   **Utilisation d'index**: Le SGBD décide automatiquement quand utiliser un index pour optimiser les requêtes. Éviter d'inhiber leur utilisation dans des expressions de calcul horizontal.
+    *   **Gestion d'index**:
+        *   Renommage: `ALTER INDEX <nom_index> RENAME TO <nouveau_nom>`.
+        *   Suppression: `DROP INDEX <nom_index>`.
+        *   La modification des attributs indexés nécessite de détruire et recréer l'index.
+*   **Synonymes**: Noms alternatifs pour des objets de la base.
+    *   **Création de synonymes**:
+        ```sql
+        CREATE [PUBLIC] SYNONYM <nom_synonyme> FOR <nom_objet>
+        ```
+       . `PUBLIC` crée un synonyme accessible à tous les utilisateurs.
+    *   **Suppression de synonymes**:
+        ```sql
+        DROP SYNONYM <nom_synonyme>
+        ```
+       .
+*   **Consultation de la Structure d'une Base**:
+    *   **Dictionnaire de données**: Ensemble de tables système contenant des informations sur la base de données. Exemples: `ALL_VIEWS`, `USER_VIEWS`.
+    *   **Table système DUAL et pseudo-colonnes**: `DUAL` est une table système à une seule ligne et une seule colonne. Les pseudo-colonnes (e.g., `CURRVAL`, `NEXTVAL` pour les séquences, `SYSDATE`) se comportent comme des attributs mais ne sont pas stockées directement.
+
+**III. Langage de Manipulation de Données (LMD)**
+
+*   **Sélection (SELECT)**:
+    ```sql
+    SELECT [DISTINCT] <liste_attributs | *>
+    FROM <liste_tables>
+    [WHERE <condition>]
+    [GROUP BY <liste_attributs>] [HAVING <condition>]
+    [ORDER BY <liste_attributs> [ASC | DESC]]
+    ```
+    *   `DISTINCT`: Élimine les doublons dans le résultat.
+    *   `FROM`: Spécifie les tables à partir desquelles les données sont extraites.
+    *   `WHERE`: Filtre les tuples en fonction d'une condition. Peut inclure des opérateurs de comparaison (=, <>, !=, >, >=, <, <=) et des prédicats (e.g., `IN`, `BETWEEN`, `LIKE`, `IS NULL`, `EXISTS`).
+    *   **Jointures**: Combinaison de tuples de plusieurs tables.
+        *   **Jointures prédicatives** (dans la clause WHERE): Utilisation d'une condition de jointure explicite.
+            *   Thêta-jointures: Utilisation d'opérateurs de comparaison.
+            *   Equi-jointures: Utilisation de l'opérateur égal (=).
+            *   Jointures externes (`LEFT OUTER JOIN`, `RIGHT OUTER JOIN`, `FULL OUTER JOIN` ou l'opérateur `(+)` dans la clause WHERE d'ORACLE). Conservent les tuples d'une table même sans correspondance dans l'autre.
+            *   Auto-jointures: Jointure d'une table avec elle-même, nécessitant des alias.
+        *   **Jointures imbriquées** (sous-requêtes dans la clause WHERE):
+            *   Sous-requêtes scalaires: Retournent une seule valeur.
+            *   Sous-requêtes mono-ligne: Peuvent retourner zéro ou une ligne et sont utilisées avec des opérateurs de comparaison simples.
+            *   Sous-requêtes multi-lignes: Peuvent retourner zéro, une ou plusieurs lignes et sont utilisées avec `IN`, `ANY`, `ALL`.
+            *   Sous-requêtes corrélées: La sous-requête dépend de la requête externe (utilisation d'alias).
+            *   `EXISTS`/`NOT EXISTS`: Vérifient l'existence de tuples satisfaisant une condition dans la sous-requête.
+    *   **Fonctions**:
+        *   **Fonctions sur les chaînes**: `upper()`, `lower()`, `initcap()`, `length()`, `substr()`, `concat()` (`||`), `lpad()`, `rpad()`, `ltrim()`, `rtrim()`, `replace()`, `instr()`, `soundex()`.
+        *   **Fonctions numériques**: (Non détaillées dans ces extraits pour la syntaxe).
+        *   **Fonctions sur les dates**: (Non détaillées dans ces extraits pour la syntaxe, mais `SYSDATE` est mentionnée).
+        *   **Fonctions de conversion**: (Mentionnées pour les changements de type).
+        *   **Fonctions d'agrégation**: `COUNT()`, `SUM()`, `AVG()`, `MIN()`, `MAX()`. Peuvent être utilisées avec `GROUP BY`.
+    *   `GROUP BY`: Regroupe les tuples ayant les mêmes valeurs pour les attributs spécifiés. Les attributs dans la clause `SELECT` (sauf les fonctions d'agrégation) doivent être dans `GROUP BY`.
+    *   `HAVING`: Filtre les groupes créés par `GROUP BY` en fonction d'une condition.
+    *   `ORDER BY`: Trie les résultats selon les attributs spécifiés (par défaut croissant `ASC`, `DESC` pour décroissant).
+    *   **Opérateurs Ensemblistes**: `UNION` (élimine les doublons), `UNION ALL` (garde tous les doublons), `INTERSECT` (renvoie les lignes communes), `MINUS` (renvoie les lignes de la première requête non présentes dans la deuxième). Les requêtes combinées doivent avoir le même nombre et type de colonnes.
+    *   **Recherche dans une Arborescence (Requêtes Hiérarchiques)**: Utilisation de `CONNECT BY`, `START WITH`, `PRIOR`, `LEVEL`.
+        ```sql
+        SELECT <liste_attributs>
+        FROM <nom_table>
+        CONNECT BY [NOCYCLE] <condition_de_relation_parent_enfant>
+        START WITH <condition_de_racine>
+        [ORDER SIBLINGS BY <liste_attributs>]
+        ```
+        `PRIOR`: Référence la ligne parente dans la condition.
+        `LEVEL`: Indique le niveau dans la hiérarchie (la racine est au niveau 1).
+        `START WITH`: Spécifie le(s) nœud(s) de départ de la recherche.
+    *   **Expression des Divisions**: Utilisée pour trouver les tuples d'une relation qui sont associés à tous les tuples d'une autre relation (le diviseur). Peut être exprimée avec `NOT EXISTS` ou avec partitionnement et `COUNT`.
+*   **Mise à Jour des Données**:
+    *   **Modification (UPDATE)**:
+        ```sql
+        UPDATE <nom_table>
+        SET <nom_colonne1> = <expression1> [, <nom_colonne2> = <expr2> …]
+        [WHERE <condition_selection>]
+        ```
+       . Les nouvelles valeurs peuvent être des constantes, des expressions ou le résultat de sous-requêtes.
+    *   **Insertion (INSERT)**:
+        ```sql
+        INSERT INTO <nom_table> [(<liste_attributs>)]
+        VALUES (<liste_valeurs>)
+        ```
+       . Ou insertion à partir d'une requête:
+        ```sql
+        INSERT INTO <nom_table> [(<liste_attributs>)]
+        <requête SELECT>
+        ```
+       .
+    *   **Suppression (DELETE)**:
+        ```sql
+        DELETE FROM <nom_table>
+        [WHERE <condition>]
+        ```
+       . Sans clause `WHERE`, tous les tuples sont supprimés.
+
+**IV. Gestion des Transactions**: Séquence d'opérations traitée comme une unité indivisible ("tout ou rien").
+*   `COMMIT`: Valide les modifications apportées à la base de données depuis le dernier `COMMIT` ou la connexion.
+*   `ROLLBACK`: Annule les modifications apportées à la base de données depuis le dernier `COMMIT` ou la connexion.
+*   `SAVEPOINT <nom_point>`: Définit un point de sauvegarde dans une transaction, permettant de revenir à cet état avec `ROLLBACK TO <nom_point>`.
+*   `SET AUTOCOMMIT {ON | OFF | IMMEDIATE}`: Active ou désactive le mode de validation automatique après chaque instruction SQL de mise à jour. Par défaut, les modifications doivent être validées explicitement avec `COMMIT`.
+
+**V. Vues**: Tables virtuelles basées sur le résultat d'une requête.
+*   **Création de vues**:
+    ```sql
+    CREATE [OR REPLACE] [FORCE | NO FORCE] VIEW <nom_vue> [(<alias1>, <alias2>…)]
+    AS <definition_requete>
+    [WITH CHECK OPTION] [WITH READ ONLY]
+    ```
+   .
+    *   `OR REPLACE`: Permet de modifier une vue existante sans la supprimer au préalable.
+    *   `FORCE`: Crée la vue même si les tables de base n'existent pas ou si l'utilisateur n'a pas les privilèges, mais des erreurs surviendront à la première utilisation si les conditions ne sont pas remplies.
+    *   `NO FORCE` (par défaut): Vérifie l'existence des tables et les privilèges à la création.
+    *   `<alias>`: Permettent de renommer les colonnes de la vue.
+    *   `WITH CHECK OPTION`: Empêche les insertions ou modifications via la vue qui ne satisferaient pas la condition de la requête de définition.
+    *   `WITH READ ONLY`: Empêche toute opération de mise à jour à travers la vue.
+*   **Utilisation de vues**: Peuvent être interrogées comme des tables normales.
+*   **Cas d'utilisation des vues**:
+    *   Restreindre l'accès aux données.
+    *   Simplifier les requêtes complexes.
+    *   Contrôler la mise à jour des données (avec `WITH CHECK OPTION`).
+*   **Manipulation de vues**:
+    *   Consultation de la structure: `DESCRIBE <nom_vue>` ou interrogation des tables système.
+    *   Modification de la définition: Recréation (avec `OR REPLACE`).
+    *   Suppression: `DROP VIEW <nom_vue>`.
+*   **Dépendances des vues**: Les vues dépendent des objets (tables, autres vues) sur lesquels elles sont définies. Les modifications des objets de base peuvent invalider les vues dépendantes. La recompilation d'une vue se fait avec `ALTER VIEW <nom_vue> COMPILE`.
+*   **Restrictions pour les mises à jour à travers les vues**: Les mises à jour (INSERT, UPDATE, DELETE) ne sont pas toujours possibles et sont soumises à des contraintes sur la requête de définition de la vue (pas de `DISTINCT`, fonctions d'agrégation, `GROUP BY`, `CONNECT BY`, `ORDER BY` dans le premier bloc `SELECT`, une seule table dans la clause `FROM` principalement).
+
+J'espère que cette fiche de révision vous sera utile ! N'hésitez pas si vous avez d'autres questions.
+                                                                                                                                                                                                                   
+                                                                                                                                                                                                                   
+Crédit : Ilane Stefanovich                                                                                                                                                                                                               
+                                                                                                                                                                                                              
